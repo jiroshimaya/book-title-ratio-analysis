@@ -1,7 +1,6 @@
 """「aはbがc割」形式のタイトルパーサーのテスト"""
 
-import pytest
-from python_template_for_ai_assistant.title_parser import parse_ratio_title
+from book_title_ratio_analysis.title_parser import parse_ratio_title
 
 
 class TestParseRatioTitle:
@@ -156,7 +155,9 @@ class TestParseRatioTitle:
 
     def test_正常系_実データ_リーダーは話し方が9割_コロン以降あり(self):
         """実データ: リーダーは話し方が9割 : 1分で..."""
-        title = "リーダーは話し方が9割 : 1分でやる気を引き出し、100%好かれる話し方のコツ"
+        title = (
+            "リーダーは話し方が9割 : 1分でやる気を引き出し、100%好かれる話し方のコツ"
+        )
         a, b, c = parse_ratio_title(title)
         # コロン以降があるためマッチしない
         assert a == "リーダー"
@@ -168,7 +169,7 @@ class TestParseRatioTitle:
         title = "リーダーは「時間の使い方」が9割!"
         a, b, c = parse_ratio_title(title)
         assert a == "リーダー"
-        assert b == "時間の使い方" # 記号は削除
+        assert b == "時間の使い方"  # 記号は削除
         assert c == 9
 
     def test_正常系_実データ_人の一生は運が八割残る二割は(self):
@@ -196,7 +197,7 @@ class TestParseRatioTitle:
         assert a is None
         assert b is None
         assert c is None
-    
+
     def test_正常系_実データ_病気の原因は栄養欠損が9割(self):
         """実データ: 病気の原因は栄養欠損が9割 : 分子栄養医学を超えた抗老化健康術（コロン以降がある）"""
         title = "病気の原因は栄養欠損が9割 : 分子栄養医学を超えた抗老化健康術"
@@ -205,7 +206,7 @@ class TestParseRatioTitle:
         assert a == "原因"
         assert b == "栄養欠損"
         assert c == 9
-    
+
     def test_正常系_実データ_病状経過と早期対応は病態生理が9割(self):
         """実データ: 病状経過と早期対応は病態生理が9割 : ICUナースのための病態生理（コロン以降がある）"""
         title = "病状経過と早期対応は病態生理が9割 : ICUナースのための病態生理"
@@ -214,7 +215,7 @@ class TestParseRatioTitle:
         assert a == "早期対応"
         assert b == "病態生理"
         assert c == 9
-    
+
     def test_正常系_実データ_美容はメンタルが9割(self):
         """実データ: 美容はメンタルが9割（末尾に「」がない）"""
         title = "美容はメンタルが9割"
@@ -247,6 +248,7 @@ class TestParseRatioTitle:
         assert a == "不動産投資"
         assert b == "組み合わせ"
         assert c == 9
+
     def test_正常系_実データ_不動産投資は出口戦略が9割(self):
         """実データ: 不動産投資は出口戦略が9割（コロン以降がない）"""
         title = "不動産投資は出口戦略が9割"
@@ -254,7 +256,7 @@ class TestParseRatioTitle:
         assert a == "不動産投資"
         assert b == "出口戦略"
         assert c == 9
-      
+
     def test_正常系_実データ_不良品が多い工場の原因は地盤が9割(self):
         """実データ: 不良品が多い工場の原因は地盤が9割（コロン以降がない）"""
         title = "不良品が多い工場の原因は地盤が9割"
@@ -262,6 +264,7 @@ class TestParseRatioTitle:
         assert a == "原因"
         assert b == "地盤"
         assert c == 9
+
     def test_異常系_実データ_不老も長寿も血糖値が9割(self):
         """実データ: 不老も長寿も「血糖値」が9割 : インスリンを減らせば老化は遅くなる（コロン以降がある）"""
         title = "不老も長寿も「血糖値」が9割 : インスリンを減らせば老化は遅くなる"

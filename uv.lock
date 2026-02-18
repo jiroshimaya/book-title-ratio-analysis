@@ -29,6 +29,58 @@ wheels = [
 ]
 
 [[package]]
+name = "book-title-ratio-analysis"
+source = { editable = "." }
+dependencies = [
+    { name = "janome" },
+    { name = "matplotlib" },
+    { name = "pandas" },
+    { name = "requests" },
+    { name = "sudachidict-core" },
+    { name = "sudachipy" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "taskipy" },
+]
+docs = [
+    { name = "myst-parser" },
+    { name = "sphinx" },
+    { name = "sphinx-autodoc-typehints" },
+    { name = "sphinx-rtd-theme" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "janome", specifier = ">=0.5.0" },
+    { name = "matplotlib", specifier = ">=3.10.8" },
+    { name = "pandas", specifier = ">=3.0.1" },
+    { name = "requests", specifier = ">=2.32.4" },
+    { name = "sudachidict-core", specifier = ">=20260116" },
+    { name = "sudachipy", specifier = ">=0.6.10" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pre-commit", specifier = ">=3.7.0" },
+    { name = "pyright", specifier = ">=1.1.0" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "ruff", specifier = ">=0.4.0" },
+    { name = "taskipy", specifier = ">=1.14.1" },
+]
+docs = [
+    { name = "myst-parser", specifier = ">=2.0.0" },
+    { name = "sphinx", specifier = ">=7.0.0" },
+    { name = "sphinx-autodoc-typehints", specifier = ">=2.0.0" },
+    { name = "sphinx-rtd-theme", specifier = ">=2.0.0" },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.4.26"
 source = { registry = "https://pypi.org/simple" }
@@ -819,58 +871,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3", size = 342432, upload-time = "2024-03-01T18:36:20.211Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
-]
-
-[[package]]
-name = "python-template-for-ai-assistant"
-source = { editable = "." }
-dependencies = [
-    { name = "janome" },
-    { name = "matplotlib" },
-    { name = "pandas" },
-    { name = "requests" },
-    { name = "sudachidict-core" },
-    { name = "sudachipy" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "taskipy" },
-]
-docs = [
-    { name = "myst-parser" },
-    { name = "sphinx" },
-    { name = "sphinx-autodoc-typehints" },
-    { name = "sphinx-rtd-theme" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "janome", specifier = ">=0.5.0" },
-    { name = "matplotlib", specifier = ">=3.10.8" },
-    { name = "pandas", specifier = ">=3.0.1" },
-    { name = "requests", specifier = ">=2.32.4" },
-    { name = "sudachidict-core", specifier = ">=20260116" },
-    { name = "sudachipy", specifier = ">=0.6.10" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pre-commit", specifier = ">=3.7.0" },
-    { name = "pyright", specifier = ">=1.1.0" },
-    { name = "pytest", specifier = ">=8.0.0" },
-    { name = "ruff", specifier = ">=0.4.0" },
-    { name = "taskipy", specifier = ">=1.14.1" },
-]
-docs = [
-    { name = "myst-parser", specifier = ">=2.0.0" },
-    { name = "sphinx", specifier = ">=7.0.0" },
-    { name = "sphinx-autodoc-typehints", specifier = ">=2.0.0" },
-    { name = "sphinx-rtd-theme", specifier = ">=2.0.0" },
 ]
 
 [[package]]
