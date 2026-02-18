@@ -13,28 +13,38 @@ from urllib.parse import quote
 # -----------------------------
 # dpid=iss-ndl-opac で国会図書館蔵書（主に図書）に限定
 # 助詞（の/が/は）を必須にしてパターンマッチ精度UP
-# NDLサーチは全角・半角数字を正規化するが、漢数字は別扱い
-QUERIES = [    
-    # 「が」パターン（「aはbがc」形式）- 半角数字
-    'title="が1割" AND dpid=iss-ndl-opac',
-    'title="が2割" AND dpid=iss-ndl-opac',
-    'title="が3割" AND dpid=iss-ndl-opac',
-    'title="が4割" AND dpid=iss-ndl-opac',
-    'title="が5割" AND dpid=iss-ndl-opac',
-    'title="が6割" AND dpid=iss-ndl-opac',
-    'title="が7割" AND dpid=iss-ndl-opac',
-    'title="が8割" AND dpid=iss-ndl-opac',
+QUERIES = [
+    # 「の」パターン（「aのcはb」形式）
+    'title="の9割" AND dpid=iss-ndl-opac',
+    'title="の8割" AND dpid=iss-ndl-opac',
+    'title="の7割" AND dpid=iss-ndl-opac',
+    'title="の九割" AND dpid=iss-ndl-opac',
+    'title="の八割" AND dpid=iss-ndl-opac',
+    'title="の七割" AND dpid=iss-ndl-opac',
+    'title="の90%" AND dpid=iss-ndl-opac',
+    'title="の80%" AND dpid=iss-ndl-opac',
+    'title="の70%" AND dpid=iss-ndl-opac',
+    'title="の90％" AND dpid=iss-ndl-opac',
+    'title="の80％" AND dpid=iss-ndl-opac',
+    'title="の70％" AND dpid=iss-ndl-opac',
+    
+    # 「が」パターン（「aはbがc」形式）
     'title="が9割" AND dpid=iss-ndl-opac',
-    # 漢数字
-    'title="が一割" AND dpid=iss-ndl-opac',
-    'title="が二割" AND dpid=iss-ndl-opac',
-    'title="が三割" AND dpid=iss-ndl-opac',
-    'title="が四割" AND dpid=iss-ndl-opac',
-    'title="が五割" AND dpid=iss-ndl-opac',
-    'title="が六割" AND dpid=iss-ndl-opac',
-    'title="が七割" AND dpid=iss-ndl-opac',
-    'title="が八割" AND dpid=iss-ndl-opac',
+    'title="が8割" AND dpid=iss-ndl-opac',
+    'title="が7割" AND dpid=iss-ndl-opac',
     'title="が九割" AND dpid=iss-ndl-opac',
+    'title="が八割" AND dpid=iss-ndl-opac',
+    'title="が七割" AND dpid=iss-ndl-opac',
+    'title="が90%" AND dpid=iss-ndl-opac',
+    'title="が80%" AND dpid=iss-ndl-opac',
+    'title="が70%" AND dpid=iss-ndl-opac',
+    
+    # 「は」パターン（「aのcはb」形式の変種）
+    'title="は9割" AND dpid=iss-ndl-opac',
+    'title="は8割" AND dpid=iss-ndl-opac',
+    'title="は7割" AND dpid=iss-ndl-opac',
+    'title="は九割" AND dpid=iss-ndl-opac',
+    'title="は八割" AND dpid=iss-ndl-opac',
 ]
 
 SRU_ENDPOINT = "https://ndlsearch.ndl.go.jp/api/sru"  # 公式例でもこのエンドポイントが提示されています  [oai_citation:2‡国立国会図書館サーチ（NDLサーチ）](https://ndlsearch.ndl.go.jp/help/api/specifications)
