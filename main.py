@@ -4,6 +4,8 @@ import time
 import math
 import html
 import os
+import json
+from datetime import datetime
 import requests
 import pandas as pd
 import xml.etree.ElementTree as ET
@@ -202,6 +204,69 @@ def build_rank(df: pd.DataFrame):
     agg = agg.merge(examples, on="a_raw", how="left")
     return out, agg
 
+def build_ranking_json(extracted: pd.DataFrame):
+    """extractedデータからランキングJSONを構築"""
+    if len(extracted) == 0:
+        return {
+            "rankings": [],
+            "metadata": {
+                "total_titles": 0,
+                "total_a_categories": 0,
+                "generated_at": datetime.now().isoformat()
+            }
+        }
+    
+    # a_rawがあるものだけを使用
+    df = extracted.dropna(subset=["a_raw", "b_raw", "c_value"]).copy()
+    
+    if len(df) == 0:
+        return {
+            "rankings": [],
+            "metadata": {
+                "total_titles": len(extracted),
+                "total_a_categories": 0,
+                "generated_at": datetime.now().isoformat()
+            }
+        }
+    
+    # aごとに集計
+    rankings = []
+    for a_val in df.groupby("a_raw")["c_value"].sum().sort_values(ascending=False).index:
+        a_df = df[df["a_raw"] == a_val]
+        a_c_sum = float(a_df["c_value"].sum())
+        a_count = len(a_df)
+        
+        # bごとに集計
+        b_breakdown = []
+        for b_val in a_df.groupby("b_raw")["c_value"].sum().sort_values(ascending=False).index:
+            b_df = a_df[a_df["b_raw"] == b_val]
+            b_c_sum = float(b_df["c_value"].sum())
+            b_count = len(b_df)
+            titles = b_df["title_raw"].tolist()
+            
+            b_breakdown.append({
+                "b": b_val,
+                "c_sum": b_c_sum,
+                "count": b_count,
+                "titles": titles
+            })
+        
+        rankings.append({
+            "a": a_val,
+            "c_sum": a_c_sum,
+            "count": a_count,
+            "b_breakdown": b_breakdown
+        })
+    
+    return {
+        "rankings": rankings,
+        "metadata": {
+            "total_titles": len(extracted),
+            "total_a_categories": len(rankings),
+            "generated_at": datetime.now().isoformat()
+        }
+    }
+
 def main():
     # コマンドライン引数でテストモード判定
     test_mode = "--test" in sys.argv
@@ -247,8 +312,14 @@ def main():
 
     ranking.to_csv("a_ranking.csv", index=False, encoding="utf-8-sig")
 
+    # JSON出力を追加
+    ranking_json = build_ranking_json(extracted)
+    with open("a_ranking.json", "w", encoding="utf-8") as f:
+        json.dump(ranking_json, f, ensure_ascii=False, indent=2)
+
     print("\nSaved:")
     print(" - a_ranking.csv")
+    print(" - a_ranking.json")
     
     if len(ranking) > 0:
         print(f"\nTop 20 (全{len(ranking)}件):")
