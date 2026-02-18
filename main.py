@@ -3,10 +3,12 @@ import sys
 import time
 import math
 import html
+import os
 import requests
 import pandas as pd
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
+from python_template_for_ai_assistant.title_parser import parse_ratio_title
 
 # -----------------------------
 # 1) 検索語（助詞必須 + 図書のみでノイズ削減）
@@ -151,127 +153,99 @@ def harvest_ndl(queries, per_page=50, max_pages=20, debug=False):
     return df
 
 # -----------------------------
-# 3) タイトルから a/b/c を抽出（まずは2パターン）
+# 3) タイトルから a/b/c を抽出（title_parserを使用）
 # -----------------------------
-KANJI_NUM = {"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9}
-
-def extract_c(title: str):
-    """
-    c_value は %に正規化（例: 9割 -> 90, 90% -> 90）
-    """
-    if not title:
-        return None, None
-
-    # 90% / 90％
-    m = re.search(r'(\d{1,3})\s*[%％]', title)
-    if m:
-        v = int(m.group(1))
-        if 0 <= v <= 100:
-            return v, "percent"
-
-    # 9割 / 8割
-    m = re.search(r'([1-9])\s*割', title)
-    if m:
-        return int(m.group(1)) * 10, "wari"
-
-    # 九割 / 八割
-    m = re.search(r'([一二三四五六七八九])割', title)
-    if m:
-        return KANJI_NUM[m.group(1)] * 10, "wari"
-
-    return None, None
-
-# パターン1: 「aのcはb」
-P1 = re.compile(r'^\s*(?P<a>.+?)の(?P<c>(?:\d{1,3}\s*[%％])|(?:[1-9]\s*割)|(?:[一二三四五六七八九]割))は(?P<b>.+?)\s*$')
-# パターン2: 「aはbがc」
-P2 = re.compile(r'^\s*(?P<a>.+?)は(?P<b>.+?)が(?P<c>(?:\d{1,3}\s*[%％])|(?:[1-9]\s*割)|(?:[一二三四五六七八九]割))\s*$')
-
-def extract_a_b(title: str):
-    if not title:
-        return None, None
-    m = P1.match(title)
-    if m:
-        return m.group("a"), m.group("b")
-    m = P2.match(title)
-    if m:
-        return m.group("a"), m.group("b")
-    return None, None
-
-def normalize_a(a):
-    if not a or not isinstance(a, str):
-        return None
-    # 最小の正規化（必要になったら強化）
-    a = a.strip()
-    a = re.sub(r'[【】\[\]（）\(\)「」『』:：・\s]+', ' ', a).strip()
-    return a if a else None
 
 def build_rank(df: pd.DataFrame):
     if len(df) == 0:
         # 空のDataFrameの場合は空の結果を返す
-        empty_extracted = pd.DataFrame(columns=["source", "title_raw", "id_or_url", "c_value", "c_type", "a_raw", "b_raw", "a_norm"])
-        empty_ranking = pd.DataFrame(columns=["a_norm", "c_sum", "n", "examples"])
+        empty_extracted = pd.DataFrame(columns=["source", "title_raw", "id_or_url", "c_value", "c_type", "a_raw", "b_raw"])
+        empty_ranking = pd.DataFrame(columns=["a_raw", "c_sum", "n", "examples"])
         return empty_extracted, empty_ranking
     
     out = df.copy()
-    out["c_value"], out["c_type"] = zip(*out["title_raw"].map(extract_c))
-    out["a_raw"], out["b_raw"] = zip(*out["title_raw"].map(extract_a_b))
-    out["a_norm"] = out["a_raw"].map(normalize_a)
-
-    # cが取れたものだけ
-    out2 = out.dropna(subset=["c_value"]).copy()
+    
+    # parse_ratio_titleでa, b, cを抽出
+    result = out["title_raw"].map(parse_ratio_title)
+    out["a_raw"] = result.map(lambda x: x[0])
+    out["b_raw"] = result.map(lambda x: x[1])
+    out["c_value"] = result.map(lambda x: x[2])
+    out["c_type"] = out["c_value"].map(lambda x: "wari" if x is not None else None)
+    
+    # パターンにマッチするもの（cが取れたもの）のみをフィルタリング
+    matched_count = out["c_value"].notna().sum()
+    print(f"  パターンマッチ: {matched_count}件 / {len(out)}件")
+    out = out[out["c_value"].notna()].reset_index(drop=True)
 
     # ランキング（aが取れないタイトルもあるので、aがあるものを優先）
-    out_ab = out2.dropna(subset=["a_norm"]).copy()
+    out_ab = out.dropna(subset=["a_raw"]).copy()
 
     if len(out_ab) == 0:
-        # a_normが取れたものがない場合
-        empty_ranking = pd.DataFrame(columns=["a_norm", "c_sum", "n", "examples"])
+        # a_rawが取れたものがない場合
+        empty_ranking = pd.DataFrame(columns=["a_raw", "c_sum", "n", "examples"])
         return out, empty_ranking
 
-    agg = (out_ab.groupby("a_norm")
+    agg = (out_ab.groupby("a_raw")
            .agg(c_sum=("c_value","sum"),
                 n=("c_value","count"))
            .sort_values(["c_sum","n"], ascending=[False, False])
            .reset_index())
 
     # 検算用の代表タイトル（上位3件）
-    examples = (out_ab.groupby("a_norm")["title_raw"]
+    examples = (out_ab.groupby("a_raw")["title_raw"]
                 .apply(lambda s: " / ".join(list(s.head(3))))
                 .reset_index()
                 .rename(columns={"title_raw":"examples"}))
 
-    agg = agg.merge(examples, on="a_norm", how="left")
+    agg = agg.merge(examples, on="a_raw", how="left")
     return out, agg
 
 def main():
     # コマンドライン引数でテストモード判定
     test_mode = "--test" in sys.argv
     debug_mode = "--debug" in sys.argv
+    force_fetch = "--force" in sys.argv  # 強制再取得フラグ
     
-    if test_mode:
-        print("🧪 テストモード: 最小サンプルで実行")
-        queries = QUERIES[:2]  # 最初の2クエリのみ
-        per_page = 10
-        max_pages = 1
+    # titles_extracted.csvが存在する場合はそれを使用
+    if os.path.exists("titles_extracted.csv") and not force_fetch:
+        print("📄 既存のtitles_extracted.csvを使用します")
+        print("   （再取得する場合は --force オプションを指定してください）")
+        extracted = pd.read_csv("titles_extracted.csv", encoding="utf-8-sig")
+        print(f"✓ {len(extracted)}件のタイトルを読み込みました")
     else:
-        print("📚 本番モード: 全クエリで実行")
-        queries = QUERIES
-        per_page = 50
-        max_pages = 20
+        if force_fetch:
+            print("🔄 --force オプションにより再取得します")
+        
+        if test_mode:
+            print("🧪 テストモード: 最小サンプルで実行")
+            queries = QUERIES[:2]  # 最初の2クエリのみ
+            per_page = 10
+            max_pages = 1
+        else:
+            print("📚 本番モード: 全クエリで実行")
+            queries = QUERIES
+            per_page = 50
+            max_pages = 20
+        
+        print(f"クエリ数: {len(queries)}, ページ/クエリ: {max_pages}, 件数/ページ: {per_page}")
+        print("取得開始...")
+        
+        df_titles = harvest_ndl(queries, per_page=per_page, max_pages=max_pages, debug=debug_mode or test_mode)
+        print(f"✓ {len(df_titles)}件のタイトルを取得")
+        
+        extracted, ranking = build_rank(df_titles)
+        extracted.to_csv("titles_extracted.csv", index=False, encoding="utf-8-sig")
+        print("✓ titles_extracted.csvを保存しました")
     
-    print(f"クエリ数: {len(queries)}, ページ/クエリ: {max_pages}, 件数/ページ: {per_page}")
-    print("取得開始...")
-    
-    df_titles = harvest_ndl(queries, per_page=per_page, max_pages=max_pages, debug=debug_mode or test_mode)
-    print(f"✓ {len(df_titles)}件のタイトルを取得")
-    
-    extracted, ranking = build_rank(df_titles)
+    # 既存ファイルを読み込んだ場合もランキングを再計算
+    if os.path.exists("titles_extracted.csv") and not force_fetch:
+        # extractedから直接ランキングを作成するため、元のDataFrameを再構築
+        df_for_ranking = extracted[["source", "title_raw", "id_or_url"]].copy() if "source" in extracted.columns else pd.DataFrame({"source": "ndl_sru", "title_raw": extracted["title_raw"], "id_or_url": extracted.get("id_or_url", None)})
+        _, ranking = build_rank(df_for_ranking)
 
-    extracted.to_csv("titles_extracted.csv", index=False, encoding="utf-8-sig")
     ranking.to_csv("a_ranking.csv", index=False, encoding="utf-8-sig")
 
     print("\nSaved:")
-    print(" - titles_extracted.csv")
     print(" - a_ranking.csv")
     
     if len(ranking) > 0:
