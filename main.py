@@ -111,6 +111,8 @@ def harvest_ndl(queries, per_page=50, max_pages=20, debug=False):
     all_rows = []
     for i, q in enumerate(queries, 1):
         print(f"  [{i}/{len(queries)}] {q[:30]}...", end=" ", flush=True)
+        query_rows = []  # このクエリで取得した全行
+        
         # 1ページ目で総件数を知る
         xml1 = sru_search(q, start_record=1, maximum_records=per_page)
         
@@ -127,7 +129,7 @@ def harvest_ndl(queries, per_page=50, max_pages=20, debug=False):
             if len(rows) > 0:
                 print(f"  サンプル: {rows[0]}")
         
-        all_rows.extend(rows)
+        query_rows.extend(rows)
         time.sleep(SLEEP_SEC)
 
         pages = min(max_pages, math.ceil(total / per_page))
@@ -135,20 +137,14 @@ def harvest_ndl(queries, per_page=50, max_pages=20, debug=False):
             start = (p - 1) * per_page + 1
             xmlp = sru_search(q, start_record=start, maximum_records=per_page)
             _, rows = parse_sru(xmlp)
-            all_rows.extend(rows)
+            query_rows.extend(rows)
             time.sleep(SLEEP_SEC)
         
-        print(f"→ {len(rows)}件 (全{total}件中)")
+        all_rows.extend(query_rows)
+        print(f"→ {len(query_rows)}件 (全{total}件中)")
 
     df = pd.DataFrame(all_rows)
     print(f"  生データ: {len(df)}件")
-    
-    if len(df) > 0:
-        df = df.dropna(subset=["title_raw"])
-        print(f"  タイトル有効: {len(df)}件")
-        # タイトルで雑に重複除去（後でid等で精緻化してもOK）
-        df = df.drop_duplicates(subset=["title_raw"]).reset_index(drop=True)
-        print(f"  重複除去後: {len(df)}件")
     
     return df
 
@@ -164,6 +160,12 @@ def build_rank(df: pd.DataFrame):
         return empty_extracted, empty_ranking
     
     out = df.copy()
+    
+    # title_rawの重複を除去
+    original_count = len(out)
+    out = out.drop_duplicates(subset=["title_raw"]).reset_index(drop=True)
+    if len(out) < original_count:
+        print(f"  重複除去: {original_count}件 → {len(out)}件")
     
     # parse_ratio_titleでa, b, cを抽出
     result = out["title_raw"].map(parse_ratio_title)

@@ -6,7 +6,12 @@ cは割の桁数（1-10）として返される（例: 9割 -> 9、10割 -> 10�
 
 import re
 from typing import Optional
+from sudachipy import tokenizer
+from sudachipy import dictionary
 
+
+# Sudachi Tokenizerの初期化（Cモード: 長単位）
+_TOKENIZER_OBJ = dictionary.Dictionary().create()
 
 # 漢数字の変換マップ（一桁のみ、10は漢数字として扱わない）
 _KANJI_NUM = {
@@ -72,6 +77,13 @@ def parse_ratio_title(title: Optional[str]) -> tuple[Optional[str], Optional[str
         # aから連体修飾句を除去（漫画で〜る、まんがで〜る など）
         a = _remove_modifier_phrases(a)
         
+        # aから形態素解析で「は」の直前の名詞のみを取得
+        a = _extract_last_noun_with_morphology(a)
+        
+        # aが名詞句でない場合は、このマッチをスキップ
+        if a is None:
+            continue
+        
         # bから括弧類を削除
         b = _remove_brackets(b)
         
@@ -108,6 +120,56 @@ def _remove_modifier_phrases(text: str) -> str:
     text = re.sub(r'^.+?も.+?も', '', text)
     
     return text.strip()
+
+
+def _extract_last_noun_with_morphology(text: str) -> Optional[str]:
+    """形態素解析を使って「は」に隣接する名詞句を抽出する
+    
+    sudachipyのCモード（長単位）を使用して、テキストの末尾が名詞で終わっている場合、
+    連続する名詞を結合して返す。末尾が名詞でない場合はNoneを返す。
+    
+    Args:
+        text: 処理するテキスト
+        
+    Returns:
+        「は」に隣接する名詞句、または名詞が見つからない場合はNone
+        
+    Examples:
+        >>> _extract_last_noun_with_morphology("日本の古典")
+        "古典"
+        >>> _extract_last_noun_with_morphology("不動産投資")
+        "不動産投資"
+        >>> _extract_last_noun_with_morphology("美肌、太らない、老けない")
+        None  # 末尾が名詞でないため
+    """
+    if not text:
+        return None
+    
+    # Cモード（長単位）で形態素解析
+    morphemes = _TOKENIZER_OBJ.tokenize(text, tokenizer.Tokenizer.SplitMode.C)
+    morpheme_list = list(morphemes)
+    
+    if not morpheme_list:
+        return None
+    
+    # 末尾の形態素が名詞でない場合は、Noneを返す
+    if morpheme_list[-1].part_of_speech()[0] != '名詞':
+        return None
+    
+    # 末尾から遡って連続する名詞を収集
+    start_idx = len(morpheme_list) - 1
+    for i in range(len(morpheme_list) - 2, -1, -1):
+        if morpheme_list[i].part_of_speech()[0] == '名詞':
+            start_idx = i
+        else:
+            break
+    
+    # 連続する名詞を結合
+    noun_sequence = ''.join(
+        morpheme_list[j].surface() 
+        for j in range(start_idx, len(morpheme_list))
+    )
+    return noun_sequence
 
 
 def _remove_brackets(text: str) -> str:

@@ -8,6 +8,8 @@ dependencies = [
     "janome>=0.5.0",
     "pandas>=3.0.1",
     "requests>=2.32.4",
+    "sudachidict-core>=20260116",
+    "sudachipy>=0.6.10",
 ]
 
 [build-system]
