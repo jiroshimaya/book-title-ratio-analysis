@@ -18,7 +18,9 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --config=pyproject.toml]
+        files: ^src/
       - id: ruff-format
+        files: ^src/
 
   # Type checking
   - repo: local
