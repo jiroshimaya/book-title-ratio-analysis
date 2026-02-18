@@ -120,9 +120,10 @@ def harvest_ndl(queries, per_page=50, max_pages=20, debug=False):
         
         if debug and i == 1:
             # 最初のクエリの生XMLをファイルに保存
-            with open("debug_response.xml", "w", encoding="utf-8") as f:
+            os.makedirs("local", exist_ok=True)
+            with open("local/debug_response.xml", "w", encoding="utf-8") as f:
                 f.write(xml1)
-            print(f"\n✓ XMLレスポンスを debug_response.xml に保存")
+            print(f"\n✓ XMLレスポンスを local/debug_response.xml に保存")
         
         total, rows = parse_sru(xml1)
         
@@ -274,10 +275,10 @@ def main():
     force_fetch = "--force" in sys.argv  # 強制再取得フラグ
     
     # titles_extracted.csvが存在する場合はそれを使用
-    if os.path.exists("titles_extracted.csv") and not force_fetch:
+    if os.path.exists("local/titles_extracted.csv") and not force_fetch:
         print("📄 既存のtitles_extracted.csvを使用します")
         print("   （再取得する場合は --force オプションを指定してください）")
-        extracted = pd.read_csv("titles_extracted.csv", encoding="utf-8-sig")
+        extracted = pd.read_csv("local/titles_extracted.csv", encoding="utf-8-sig")
         print(f"✓ {len(extracted)}件のタイトルを読み込みました")
     else:
         if force_fetch:
@@ -301,25 +302,27 @@ def main():
         print(f"✓ {len(df_titles)}件のタイトルを取得")
         
         extracted, ranking = build_rank(df_titles)
-        extracted.to_csv("titles_extracted.csv", index=False, encoding="utf-8-sig")
-        print("✓ titles_extracted.csvを保存しました")
+        os.makedirs("local", exist_ok=True)
+        extracted.to_csv("local/titles_extracted.csv", index=False, encoding="utf-8-sig")
+        print("✓ local/titles_extracted.csvを保存しました")
     
     # 既存ファイルを読み込んだ場合もランキングを再計算
-    if os.path.exists("titles_extracted.csv") and not force_fetch:
+    if os.path.exists("local/titles_extracted.csv") and not force_fetch:
         # extractedから直接ランキングを作成するため、元のDataFrameを再構築
         df_for_ranking = extracted[["source", "title_raw", "id_or_url"]].copy() if "source" in extracted.columns else pd.DataFrame({"source": "ndl_sru", "title_raw": extracted["title_raw"], "id_or_url": extracted.get("id_or_url", None)})
         _, ranking = build_rank(df_for_ranking)
 
-    ranking.to_csv("a_ranking.csv", index=False, encoding="utf-8-sig")
+    os.makedirs("local", exist_ok=True)
+    ranking.to_csv("local/a_ranking.csv", index=False, encoding="utf-8-sig")
 
     # JSON出力を追加
     ranking_json = build_ranking_json(extracted)
-    with open("a_ranking.json", "w", encoding="utf-8") as f:
+    with open("local/a_ranking.json", "w", encoding="utf-8") as f:
         json.dump(ranking_json, f, ensure_ascii=False, indent=2)
 
     print("\nSaved:")
-    print(" - a_ranking.csv")
-    print(" - a_ranking.json")
+    print(" - local/a_ranking.csv")
+    print(" - local/a_ranking.json")
     
     if len(ranking) > 0:
         print(f"\nTop 20 (全{len(ranking)}件):")

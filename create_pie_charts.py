@@ -6,11 +6,11 @@ from pathlib import Path
 def create_pie_charts():
     """a_ranking.jsonから各aごとにbの割合を示す円グラフを作成する"""
     # JSONファイルを読み込む
-    with open("a_ranking.json", "r", encoding="utf-8") as f:
+    with open("local/a_ranking.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     
     # 出力ディレクトリを作成
-    output_dir = Path("charts")
+    output_dir = Path("local/charts")
     output_dir.mkdir(exist_ok=True)
     
     # 各aについて円グラフを作成
