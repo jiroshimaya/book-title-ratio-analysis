@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "janome>=0.5.0",
     "matplotlib>=3.10.8",
+    "networkx>=3.6.1",
     "pandas>=3.0.1",
     "requests>=2.32.4",
     "sudachidict-core>=20260116",

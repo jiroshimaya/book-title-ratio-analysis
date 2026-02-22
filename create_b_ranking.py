@@ -17,13 +17,13 @@ _TOKENIZER_OBJ = dictionary.Dictionary().create()
 
 def extract_last_simple_noun(text: str) -> str:
     """短単位の形態素解析で末尾の単純名詞を抽出する
-    
+
     Args:
         text: 処理するテキスト
-        
+
     Returns:
         末尾の単純名詞、または見つからない場合は元のテキスト
-        
+
     Examples:
         >>> extract_last_simple_noun("高校サッカー")
         "サッカー"
@@ -32,19 +32,19 @@ def extract_last_simple_noun(text: str) -> str:
     """
     if not text:
         return text
-    
+
     # Aモード（短単位）で形態素解析
     morphemes = _TOKENIZER_OBJ.tokenize(text, tokenizer.Tokenizer.SplitMode.A)
     morpheme_list = list(morphemes)
-    
+
     if not morpheme_list:
         return text
-    
+
     # 末尾から遡って最初に見つかった名詞を返す
     for morpheme in reversed(morpheme_list):
         if morpheme.part_of_speech()[0] == "名詞":
             return morpheme.surface()
-    
+
     # 名詞が見つからない場合は元のテキストを返す
     return text
 
