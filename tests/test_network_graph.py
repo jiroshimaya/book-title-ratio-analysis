@@ -96,4 +96,3 @@ class TestAggregateNormalizedData:
         data = []
         result = aggregate_normalized_data(data)
         assert result == {}
-
