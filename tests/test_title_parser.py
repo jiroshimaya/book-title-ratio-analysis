@@ -50,6 +50,40 @@ class TestParseRatioTitle:
             assert b == "見た目"
             assert c == i
 
+    def test_正常系_全角数字の割合(self):
+        """「aはbがc割」形式（全角数字）で正しくパースできる"""
+        title = "人は見た目が９割"
+        a, b, c = parse_ratio_title(title)
+        assert a == "人"
+        assert b == "見た目"
+        assert c == 9
+
+    def test_正常系_全角数字10割(self):
+        """全角の10割をパースできる"""
+        title = "人は見た目が１０割"
+        a, b, c = parse_ratio_title(title)
+        assert a == "人"
+        assert b == "見た目"
+        assert c == 10
+
+    def test_正常系_複数の全角数字(self):
+        """１割から９割まで全てパースできる（全角）"""
+        fullwidth = ["１", "２", "３", "４", "５", "６", "７", "８", "９"]
+        for i, fw in enumerate(fullwidth, 1):
+            title = f"人は見た目が{fw}割"
+            a, b, c = parse_ratio_title(title)
+            assert a == "人", f"{title} のパースに失敗"
+            assert b == "見た目", f"{title} のパースに失敗"
+            assert c == i, f"{title} のパースに失敗"
+
+    def test_正常系_実データ_人は話し方が９割(self):
+        """全角数字の実データをパースできる"""
+        title = "人は話し方が９割２"
+        a, b, c = parse_ratio_title(title)
+        assert a == "人"
+        assert b == "話し方"
+        assert c == 9
+
     def test_正常系_空白を含む(self):
         """「が」と「割」の間に空白があってもパースできる"""
         title = "人は見た目が9 割"
